@@ -1,0 +1,18 @@
+# Runtime dependencies for the modelling pipeline.
+# Pinned to the versions the reported results were produced with.
+numpy==2.2.6
+pandas==2.3.3
+scipy==1.18.0
+scikit-learn==1.9.0
+lightgbm==4.7.0
+xgboost==3.4.1
+matplotlib==3.11.1
+seaborn==0.13.2
+tabulate==0.10.0
+
+# Note: the DICOM/NRRD/PyRadiomics feature-extraction stack (pydicom, pynrrd,
+# pyradiomics, SimpleITK, scikit-image, tkcalendar) is NOT required to reproduce the
+# modelling results, which start from the extracted CSVs. It is only needed to regenerate
+# features from raw images. PyRadiomics has no wheels for Python >= 3.10, so install it in
+# a separate Python 3.8/3.9 environment if you need it:
+#   pyradiomics==3.1.0, SimpleITK==2.4.1, pydicom, pynrrd, scikit-image

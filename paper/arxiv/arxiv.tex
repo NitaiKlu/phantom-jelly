@@ -1,0 +1,39 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[numbers]{natbib}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{amsfonts}
+\usepackage{nicefrac}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{preamble}
+
+\title{Data-Driven Partial Volume Correction in {SPECT}/{CT} \\ Using Stochastic Tissue-Equivalent Gelatin Phantoms}
+
+\renewcommand{\thefootnote}{\fnsymbol{footnote}}
+
+% Replace names, affiliations, and emails before submission.
+\author{
+  Author One\footnotemark[1] \qquad
+  Author Two\footnotemark[1]
+}
+\date{}
+
+\begin{document}
+\maketitle
+
+{\renewcommand{\footnotesize}{\scriptsize}
+\footnotetext[1]{Affiliation; \texttt{\{author.one,author.two\}@institution.edu}}
+}
+
+\renewcommand{\thefootnote}{\arabic{footnote}}
+\setcounter{footnote}{0}
+
+\input{../body}
+
+\end{document}

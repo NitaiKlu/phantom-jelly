@@ -1,6 +1,6 @@
 # Paper to-dos (through segmentation; radiomics/ML not included)
 
-Checklist for **everything before** “Radiomics and machine learning architecture.” Do not start the paper edits until the **Blocked** items have answers (or an explicit decision to omit/soft-claim).
+**Status (2026-08-30).** Methods through segmentation, abstract, intro, discussion, and consistency pass are in the manuscript. Radiomics/ML + Results are **not** rewritten yet. NEMA RC comparison is blocked on sphere measurements (or fitted \(a,b\)).
 
 Legend: **[I can draft]** = I can write from the current manuscript + review. **[Blocked — you supply]** = I do not have the experimental fact. **[Decision]** = you choose among options, then I implement.
 
@@ -8,223 +8,245 @@ Legend: **[I can draft]** = I can write from the current manuscript + review. **
 
 ## 0. Information I cannot complete (hand these over)
 
-Copy this section out, fill it, and return it. Until then I can restructure and deflate rhetoric, but I cannot make the methods reproducible.
+Answers received. Applied where the paper needed them; ignored items were omitted rather than invented.
 
 ### 0.1 Numbers and dataset composition
-- [ ] **[Blocked]** Canonical validated-segment count (use one number everywhere; review assumed **2,302**).
-- [ ] **[Blocked]** Attrition: CT-detected → NM-detected → 1:1 matched → validated. Exclusion reasons and \(n\) for each (overlap, merge, no match, bubbles, too small, …).
-- [ ] **[Blocked]** Insert **volume** range (ml) overall and for the held-out session (min–max, and mean if you have it).
-- [ ] **[Blocked]** Per-session table: date; session nickname; \(n\) containers; \(n\) SPECT/CT scans; \(n\) validated segments; activity range; volume range. Confirm whether held-out is “session 0” or a **date**.
-- [ ] **[Blocked]** Scans per container; whether all 21 jars appear in every session.
-- [ ] **[Blocked]** Independent-sample note: is activity density constant within a scan for most acquisitions? If you know “\(N\) scans / \(M\) unique activity labels,” give it. If not, say “unknown — omit numeric independence claim.”
-- [ ] **[Decision]** Units: report **kBq/ml** with µCi/ml in parentheses (recommended), or µCi/ml only.
+- [x] **[Blocked]** Canonical validated-segment count (use one number everywhere; review assumed **2,302**).
+  Applied: **2,302** everywhere.
+- [x] **[Blocked]** Attrition: CT-detected → NM-detected → 1:1 matched → validated. Exclusion reasons and \(n\) for each (overlap, merge, no match, bubbles, too small, …).
+  Applied qualitatively (1:1 only; many-to-one excluded). Exact exclusion \(n\) not supplied — omitted.
+- [x] **[Blocked]** Insert **volume** range (ml) overall and for the held-out session (min–max, and mean if you have it).
+  **Ignored** — not in the paper.
+- [x] **[Blocked]** Per-session table: date; session nickname; \(n\) containers; \(n\) SPECT/CT scans; \(n\) validated segments; activity range; volume range. Confirm whether held-out is “session 0” or a **date**.
+  Applied as Table 2 (sessions 1–5 + held-out). Activity converted to kBq/ml from the µCi/ml ranges below.
+
+  | date | Number of segmentation | Activity_Density_uCiml_NM_40 | scans | jars |
+  | --- | --- | --- | --- | --- |
+  | 1 | 386 | 5.5-7.3 | 11 | 3 |
+  | 2 | 327 | 3.4-4.7 | 13 | 3 |
+  | 3 | 190 | 3.04-3.96 | 10 | 3 |
+  | 4 | 583 | 0.6-0.9 | 15 | 4 |
+  | 5 | 482 | 1.7-2.5, 8.4-11.8 | 13 | 4 |
+  | held-out (was 0) | 334 | 3.6-5.2, 7.1-10.2 | 13 | 4 |
+
+- [x] **[Blocked]** Scans per container; whether all 21 jars appear in every session.
+  Covered by Table 2.
+- [x] **[Blocked]** Independent-sample note: is activity density constant within a scan for most acquisitions? If you know “\(N\) scans / \(M\) unique activity labels,” give it. If not, say “unknown — omit numeric independence claim.”
+  **Omitted** (unknown).
+- [x] **[Decision]** Units: report **kBq/ml** with µCi/ml in parentheses (recommended), or µCi/ml only.
+  Applied: **kBq/ml** only. Global range from the table: **22.2–436.6 kBq/ml** (not the old 0.12–80.07 µCi/ml).
 
 ### 0.2 Phantom recipe and activity assay
-- [ ] **[Blocked]** Gelatin: grade/bloom, manufacturer/product.
-- [ ] **[Blocked]** How irregular shapes are **actually formed** (set–break–embed, pipette droplets, inject into set background, shake while gelling, …). Step order: background first vs inserts first.
-- [ ] **[Blocked]** Container: type, volume, wall material, fill height, approximate dimensions; how it sat on the pallet.
-- [ ] **[Blocked]** Contrast agent: product name, iodine concentration (mg I/mL), and confirm 10 mL/L.
-- [ ] **[Blocked]** Pigment: juice species/brand, **or** “food dye, product X,” **or** decision to call it only “dark pigment” if brand is unknown.
-- [ ] **[Blocked]** \(^{99\mathrm{m}}\)Tc chemical form (e.g. sodium pertechnetate).
-- [ ] **[Blocked]** Activity **assay**: instrument (dose calibrator model), geometry, residual-syringe correction (yes/no), clocks used, decay correction to which time (start of SPECT / mid-frame).
-- [ ] **[Blocked]** How activity density (µCi/ml) was computed: assayed activity ÷ **prepared** gel volume, or assayed activity ÷ **CT** volume, or another rule.
-- [ ] **[Blocked]** Background assayed for contamination? Aliquots of insert mix counted for uniformity?
-- [ ] **[Blocked]** Timing: mix → gelation temperature/time → first scan; session duration; any observation of iodine/Tc diffusion.
-- [ ] **[Blocked]** Typical inserts per jar; intended size range.
-- [ ] **[Blocked]** Measured HU (mean ± SD) of background vs inserts, if it exists. If not, say so — we will not invent “tissue-equivalent” numbers.
-- [ ] **[Blocked]** Air bubbles: ignored / excluded / hole-filled in CT masks?
-- [ ] **[Blocked / Decision]** Attenuation mismatch: do you have data on AC bias from iodine in inserts? If none: we will **discuss as a limitation**, not claim matched attenuation.
+- [x] **[Blocked]** Gelatin: grade/bloom, manufacturer/product. **Ignored.**
+- [x] **[Blocked]** How irregular shapes are **actually formed**. **Ignored.**
+- [x] **[Blocked]** Container: type, volume, wall material, fill height. **Ignored.**
+- [x] **[Blocked]** Contrast agent: product name, iodine concentration. **Ignored** (kept 10 mL/L).
+- [x] **[Blocked]** Pigment: juice species/brand. **Ignored** (kept “dark-pigmented juice”).
+- [x] **[Blocked]** \(^{99\mathrm{m}}\)Tc chemical form. **Ignored.**
+- [x] **[Blocked]** Activity **assay** protocol. **Ignored.**
+- [x] **[Blocked]** How activity density was computed. **Ignored.**
+- [x] **[Blocked]** Background assayed for contamination? **Ignored.**
+- [x] **[Blocked]** Timing: mix → gelation → first scan. **Ignored.**
+- [x] **[Blocked]** Typical inserts per jar; intended size range. **Ignored.**
+- [x] **[Blocked]** Measured HU of background vs inserts. **Ignored** (no numbers).
+- [x] **[Blocked]** Air bubbles. **Ignored.**
+- [x] **[Blocked / Decision]** Attenuation mismatch: discuss as a limitation.
+  Applied: Methods sentence + **Discussion** section.
 
 ### 0.3 SPECT/CT protocol
-- [ ] **[Blocked]** SPECT: collimator; photopeak energy window; scatter window and whether scatter correction was on; projections (number, angular step); orbit (circular vs contour); radius or auto-contour; matrix; voxel size; zoom; time/view (reconcile with “3 s per degree”).
-- [ ] **[Blocked]** Reconstruction: software/product (Flash3D, xSPECT, …); AC yes (already stated); scatter; collimator-detector response / resolution recovery; where the 8 mm Gaussian was applied; **justification of 48 iterations × 1 subset** (clinical preset name is enough).
+- [ ] **[Blocked]** SPECT: collimator; energy window; scatter; orbit; matrix; voxel size; time/view.
+  **Later** — “Ignore for now, I will hand it later.” Existing 360° / 3 s per degree kept.
+- [x] **[Blocked]** Reconstruction: software/product, scatter, RR, 48×1 justification.
+  **Ignored.** Existing OSEM 48×1, AC, 8 mm Gaussian kept.
 - [ ] **[Blocked]** SPECT calibration to Bq/ml or counts-only.
-- [ ] **[Blocked]** CT: kVp; mAs or automatic exposure; collimation; slice thickness; kernel; voxel size; same CT used for AC and for 60 HU mask (yes/no).
-- [ ] **[Blocked]** QC / CT–SPECT registration: vendor default rigid only, or extra registration? Any residual known?
+  **Later** — “I'll hand it later.”
+- [x] **[Blocked]** CT: kVp, mAs, slice thickness, kernel, voxel size.
+  Extra CT geometry **ignored**. Applied: **same CT used for AC and morphological mask.**
+- [x] **[Blocked]** QC / CT–SPECT registration. **Ignored.**
 
 ### 0.4 Segmentation and matching
-- [ ] **[Blocked]** Why **60 HU** (empirical from histogram / visual / other). Any sensitivity test (40 vs 80 HU)?
-- [ ] **[Blocked]** CT post-processing: 3D connected components, minimum volume, hole fill, split of touching objects (yes/no + parameters).
-- [ ] **[Blocked]** SPECT resampling onto CT grid (or reverse) and interpolation.
-- [ ] **[Blocked]** 1:1 matching rule: overlap/IoU, centroid distance, Hungarian, distance cutoff.
-- [ ] **[Blocked]** Why NM **8% global** then **40% of local peak**; why recursive split thresholds 60% volume and 70% secondary peak.
-- [ ] **[Blocked]** Exclusion fraction for merged/overlapping inserts (even an approximate %).
+- [x] **[Blocked]** Why **60 HU**. Applied: most promising cut in a small-scale experiment.
+- [x] **[Blocked]** CT post-processing (connected components, min volume, holes). **Ignored.**
+- [x] **[Blocked]** SPECT resampling onto CT. **Ignored.**
+- [x] **[Blocked]** 1:1 matching rule. Applied: exact one-CT to one-SPECT; many-to-one excluded.
+- [x] **[Blocked]** Why NM **8%** then **40%**; recursive 60%/70%. Thresholds kept; recursive rule recast as **merged-blob splitter**. Extra justification **ignored.**
+- [x] **[Blocked]** Exclusion fraction. **Ignored** (no %).
 
 ### 0.5 Figures
-- [ ] **[Blocked]** Figure 1 left: what are the **orange rings** (scanner geometry vs rendering artifact)? Delete if clutter.
-- [ ] **[Blocked]** Figure 1 right: jar volume or a ruler measurement for the caption.
-- [ ] **[Blocked]** Figure 2: display windows (CT HU; SPECT counts or Bq/ml) if you want them in the caption.
+- [x] **[Blocked]** Figure 1 orange rings. **Ignored** (PNG not redrawn). Captions rewritten.
+- [x] **[Blocked]** Figure 1 jar volume / ruler. **Ignored.**
+- [x] **[Blocked]** Figure 2 display windows. **Ignored.**
 
-### 0.6 Scope decisions (no lab work, but you must choose)
-- [ ] **[Decision]** Primary clinical hook: **SPECT quantification / dosimetry**, with PET SUV as analogue — not PET-first.
-- [ ] **[Decision]** Abstract NEMA sentence: **soften** (no “outperforming” until quantified) vs keep if you will add RC metrics in the later section.
-- [ ] **[Decision]** Two abstract variants (I will draft both, you pick): **A** conservative methods-paper; **B** results-forward (still no unearned NEMA win).
-- [ ] **[Decision]** \(^{177}\)Lu / PET: “protocol transferable in spirit, demonstrated only with \(^{99\mathrm{m}}\)Tc” vs drop Lu/PET from abstract entirely.
+### 0.6 Scope decisions
+- [x] **[Decision]** Primary clinical hook: SPECT quantification / dosimetry, PET SUV as analogue. Applied.
+- [x] **[Decision]** Abstract NEMA sentence: keep “outperforming” until RC metrics exist.
+  Kept for now; **still unearned** until NEMA points or \(a,b\) arrive.
+- [x] **[Decision]** Abstract variant **A only**. Applied.
+- [x] **[Decision]** \(^{177}\)Lu / PET: transferable in spirit, demonstrated only with \(^{99\mathrm{m}}\)Tc. Applied.
 
 ---
 
 ## 1. Global consistency (do first, after 0.1 numbers land)
 
-- [ ] **[I can draft]** Replace every 3,000 / “over 2,000” / “approximately 2,000” / “more than two thousand” with the canonical validated \(n\), plus exclusion \(n\) once.
-- [ ] **[I can draft]** Define **SPECT** at first use; stop using **NM** in prose (keep NM only if a figure label already says NM, and expand in the caption).
-- [ ] **[I can draft]** Split ground truth in every relevant sentence: **CT = morphological reference (volume/shape)**; **activity density = assayed preparation** (wording depends on 0.2).
-- [ ] **[I can draft]** Replace “absolute ground truth” with “high-resolution morphological reference.”
-- [ ] **[I can draft]** Replace “tissue-equivalent” with a claim we can support (water-equivalent gelatin ± measured HU from 0.2).
-- [ ] **[I can draft]** Replace “isotope-agnostic” / “same protocol extends to \(^{177}\)Lu” with the Decision in 0.6.
-- [ ] **[I can draft]** SI units per 0.1 decision.
-- [ ] **[I can draft]** Rename held-out set from “session 0” to the date/name you supply.
-- [ ] **[I can draft]** Kill filler: paradigm shift, clinical imperative, life-saving treatments, big data, data factory (or one use of “data factory” max), “models collapse,” “massive,” “vast,” “extensive sessions.”
+- [x] **[I can draft]** Replace every 3,000 / “over 2,000” / “approximately 2,000” with **2,302**.
+- [x] **[I can draft]** Define **SPECT** at first use; stop using **NM** in prose.
+- [x] **[I can draft]** Split ground truth: CT = morphological reference; activity density = preparation target.
+- [x] **[I can draft]** Replace “absolute ground truth” with “high-resolution morphological reference.”
+- [x] **[I can draft]** Replace “tissue-equivalent” (title + body → water-equivalent gelatin / stochastic gelatin).
+- [x] **[I can draft]** Replace “isotope-agnostic” with transferable-in-spirit / \(^{99\mathrm{m}}\)Tc-only demonstration.
+- [x] **[I can draft]** SI units: kBq/ml.
+- [x] **[I can draft]** Rename held-out set from “session 0” to **held-out session**.
+- [x] **[I can draft]** Kill filler (paradigm shift, data factory, models collapse, etc.).
 
 ---
 
 ## 2. Title, authors, front matter
 
-- [ ] **[I can draft]** Keep title unless you want SPECT-quantification wording aligned with the new intro hook.
-- [ ] **[Blocked]** Author 2 affiliation: institution missing (`roeexs@gmail.com` only). Supply or we leave as is.
-- [ ] **[Decision]** Add a short running title / keywords later if the target venue needs them (not required for the current arXiv article class).
+- [x] **[I can draft]** Title aligned: dropped “Tissue-Equivalent.”
+- [x] **[Blocked]** Author 2 affiliation: **left as email only.**
+- [x] **[Decision]** Running title / keywords: not required for arXiv.
 
 ---
 
 ## 3. Abstract rewrite
 
-- [ ] **[I can draft]** Draft **Variant A** (methods-paper): gelatin library, 6 sessions / 21 containers / 75 scans / \(n\) segments, activity range, cold background, CT morphology vs SPECT observation, held-out session, \(^{99\mathrm{m}}\)Tc as model tracer. Results as secondary.
-- [ ] **[I can draft]** Draft **Variant B** (results-forward): same facts + held-out \(R^2\) numbers; NEMA mentioned only as “compared with a sphere RC curve,” no “outperforming” unless 0.6 says you will quantify later.
-- [ ] **[I can draft]** Either variant: drop unexplained “NM”; drop isotope-agnostic; state two ground truths; state held-out is a new session/preparation.
-- [ ] **[Decision]** You pick A or B (or a merge). Then one pass to match the final numbers from §0.1.
+- [x] **[I can draft]** Draft **Variant A** (methods-paper) and put it in `paper/body.tex`.
+- [x] **[I can draft]** Variant B not drafted (A only).
+- [x] **[I can draft]** Drop unexplained “NM”; drop isotope-agnostic; two ground truths; held-out is a new session.
+- [x] **[Decision]** A only.
 
 ---
 
 ## 4. Introduction — restructure (compress + contributions)
 
-- [ ] **[I can draft]** Cut PVE textbook to **one paragraph**: finite resolution → underestimation in small / high-gradient lesions; spill-out vs spill-in named once; tissue fraction named once.
-- [ ] **[I can draft]** Move the longer two-mechanism PVC history (deconvolution, anatomy-guided, noise sensitivity) **out of the intro** — either delete or a short appendix “PVE and PVC background.”
-- [ ] **[I can draft]** Reframe motivation as **quantitative SPECT** (dosimetry / activity concentration), with PET SUV thresholds as the well-known clinical analogue — per 0.6.
-- [ ] **[I can draft]** Fix citations: Jentzen 2011 for **SPECT recovery**, not PET cut-offs; keep Soret, Erlandsson, Hoffman, Kessler, Gallivanone, Zeintl where they belong.
-- [ ] **[I can draft]** Shape-vs-volume paragraph stays (circles vs ellipses → stochastic lesions). Soften “unpredictable RCs” to “RC is not a function of volume alone.”
-- [ ] **[I can draft]** Related work, 3–5 sentences: spherical NEMA RC; irregular/3D-printed/anthropomorphic phantoms; gelatin/agar if we cite generic practice. **Do not** cite Salmon, Tran-Gia, Southekal, Matsubara, De Nijs as support for gelatin+radiomics unless we actually discuss them (drop from intro closing).
-- [ ] **[I can draft]** Delete “over 3,000” / “precisely calibrated” until assay text exists; then “calibrated” only if 0.2 supports it.
-- [ ] **[I can draft]** Delete “recovery models collapse” and “big data environment.”
-- [ ] **[I can draft]** **Contributions paragraph** at end of intro (your `paper/additions.md` item 1), e.g.:
-  1. stochastic contrast-labeled gelatin inserts with known morphology (CT) and known activity (assay);
-  2. SPECT/CT library of \(n\) 1:1 pairs, held-out session;
-  3. scope sentence: proof of concept on cold-background \(^{99\mathrm{m}}\)Tc SPECT, not a patient PVC tool, not a \(^{177}\)Lu/PET demonstration.
-- [ ] **[I can draft]** Explicit **not-claims**: no warm background; overlapping lesions excluded; not a deployed clinical correction.
+- [x] **[I can draft]** Cut PVE textbook to one paragraph.
+- [x] **[I can draft]** PVC history compressed in-place (no appendix).
+- [x] **[I can draft]** Reframe motivation as quantitative SPECT; PET SUV as analogue.
+- [x] **[I can draft]** Fix citations (Jentzen for SPECT RC, not PET cut-offs).
+- [x] **[I can draft]** Soften “unpredictable RCs” to “RC is not a function of volume alone.”
+- [x] **[I can draft]** Related work without Salmon / Tran-Gia / Southekal / Matsubara / De Nijs as gelatin+ML support.
+- [x] **[I can draft]** Delete “over 3,000” / “precisely calibrated.”
+- [x] **[I can draft]** Delete “recovery models collapse” and “big data environment.”
+- [x] **[I can draft]** Contributions paragraph at end of intro (`paper/additions.md` item 1).
+- [x] **[I can draft]** Explicit not-claims: cold background; overlaps excluded; not a patient PVC tool.
 
 ---
 
 ## 5. Methods — structural change
 
-- [ ] **[I can draft]** **Delete** subsection “General algorithm and experimental rationale” (repeats intro + later methods; “four-stage” vs three bullets; “two-phase” wording).
-- [ ] **[I can draft]** Optional replacement: **one figure** — flowchart Prepare → Scan / shake / decay → Segment & 1:1 match → (later) model. Only if you want a visual; otherwise skip.
-- [ ] **[I can draft]** New Methods order:
-  1. Phantom preparation
-  2. Activity assay and decay *(new)*
-  3. SPECT/CT acquisition and reconstruction
-  4. Segmentation, matching, exclusions
-  5. Dataset composition
+- [x] **[I can draft]** Delete “General algorithm and experimental rationale.”
+- [x] **[I can draft]** Pipeline flowchart (Figure 1).
+- [x] **[I can draft]** New Methods order: phantom → SPECT/CT → segmentation → dataset.
+  Assay subsection **not** added (0.2 ignored).
 
 ---
 
 ## 6. Phantom preparation (expand in main text; do not appendix the recipe)
 
-- [ ] **[I can draft once 0.2 arrives]** Base matrix: water, temperature, gelatin g/L, bloom/product, stir/gelation.
-- [ ] **[I can draft once 0.2 arrives]** Insert mix: Tc form, contrast product + mg I/mL + 10 mL/L, pigment.
-- [ ] **[I can draft once 0.2 arrives]** **Shape-formation protocol** (the missing method): how lumps are made and embedded.
-- [ ] **[I can draft once 0.2 arrives]** Containers and filling; placement on scanner.
-- [ ] **[I can draft]** Fix internal contradiction: **do not** claim matched attenuation after adding iodine. Rewrite: matched gelatin base; iodine added for CT contrast; expected ΔHU / AC implication as limitation if no measurement.
-- [ ] **[I can draft]** Air bubbles: one sentence from 0.2.
-- [ ] **[I can draft]** Shake between scans = **pose resampling of the same physical inserts**, not independent new lesions.
-- [ ] **[I can draft]** Decay between scans = **count-level / SNR diversity**, same morphology.
-- [ ] **[I can draft]** Appendix only: bath model, lot numbers, exact stir times — if you provide them. Otherwise omit.
+- [x] **[I can draft once 0.2 arrives]** Base matrix: kept 65°C, 19 g/L, ~1 h stir. Bloom/product **ignored.**
+- [x] Insert mix: kept juice + 10 mL/L contrast + \(^{99\mathrm{m}}\)Tc. Product details **ignored.**
+- [x] Shape-formation protocol. **Ignored.**
+- [x] Containers and filling. **Ignored.**
+- [x] **[I can draft]** Do not claim matched attenuation after iodine. Applied + Discussion.
+- [x] Air bubbles. **Ignored.**
+- [x] **[I can draft]** Shake = pose resampling of the same physical inserts.
+- [x] **[I can draft]** Decay = count-level / SNR diversity, same morphology.
+- [x] Appendix reagent lots. **Omitted** (not provided).
 
 ---
 
 ## 7. New subsection: Activity assay and decay
 
-- [ ] **[I can draft once 0.2 arrives]** Formula for activity density; decay correction; time reference.
-- [ ] **[I can draft]** State clearly this — not CT — is the activity ground truth.
-- [ ] **[I can draft]** If assay details never arrive: we **cannot** keep “known/calibrated activity density” as a strong claim; we must downgrade to “nominal activity from preparation, assay not reported” (worse for reviewers). Flag this if 0.2 is incomplete.
+- [x] Assay formula / decay clock. **Ignored** — no new subsection.
+- [x] **[I can draft]** Activity density is a preparation target, not CT. Stated in abstract/methods/discussion.
+- [x] **[I can draft]** Downgraded “calibrated”; Discussion notes dose-calibrator protocol not reported.
 
 ---
 
 ## 8. SPECT/CT acquisition and reconstruction (expand; appendix only the DICOM dump)
 
-- [ ] **[I can draft once 0.3 arrives]** SPECT paragraph: camera (keep Siemens Symbia Pro.specta, Shaare Zedek), collimator, windows, scatter, orbit, matrix, voxel size, time/view.
-- [ ] **[I can draft once 0.3 arrives]** Reconstruction paragraph: product name, OSEM 48×1 explained, AC, scatter, RR/CDR, 8 mm FWHM Gaussian and whether that is the site clinical kernel.
-- [ ] **[I can draft once 0.3 arrives]** CT paragraph: kVp, exposure, slice thickness, kernel, voxel size; same CT for AC and morphological mask.
-- [ ] **[I can draft]** One sentence: hybrid vendor registration only, unless 0.3 says otherwise.
-- [ ] **[I can draft]** Main text = the list above. Appendix = full recon preset / DICOM fields **if** you paste them.
+- [ ] SPECT collimator/windows/etc. **Waiting** on later hand-off.
+- [x] Reconstruction extras. **Ignored**; kept existing OSEM 48×1 / 8 mm.
+- [x] CT kVp/slice. **Ignored**; same-CT-for-AC-and-mask sentence added.
+- [x] Vendor registration sentence. **Omitted** (ignored).
+- [x] DICOM appendix. **Omitted.**
 
 ---
 
 ## 9. Segmentation, matching, exclusions
 
-- [ ] **[I can draft once 0.4 arrives]** CT: 60 HU + justification; connected components / min volume / holes / splits.
-- [ ] **[I can draft]** Call CT volume “volume at 60 HU,” not absolute truth. Add sensitivity sentence if you have it; if not, one limitation sentence.
-- [ ] **[I can draft once 0.4 arrives]** NM: 8% then 40%; recursive split as **merged-blob splitter**, not “to preserve irregular morphology.”
-- [ ] **[I can draft]** Note: NM thresholds are applied to the **PVE-blurred** image; features will live in that mask.
-- [ ] **[I can draft once 0.4 arrives]** Matching algorithm and 1:1 rule.
-- [ ] **[I can draft once 0.4 arrives]** Exclusions + \(n\) or %; **scope:** adjacent/overlapping lesions not in the dataset (spill-in from neighbors not studied).
-- [ ] **[I can draft]** Cold-background limitation sentence (spill-out dominated; spill-in from warm tissue not tested).
+- [x] CT 60 HU + small-scale justification. Post-processing details ignored.
+- [x] Call CT volume “volume at 60 HU.” Applied; limitation in Discussion.
+- [x] SPECT 8% then 40%; recursive split as merged-blob splitter.
+- [x] SPECT thresholds applied to the PVE-blurred image.
+- [x] 1:1 matching; clustered inserts out of scope.
+- [x] Exclusion \(n\)/% **ignored**; qualitative exclusion rule applied.
+- [x] Cold-background limitation (Methods + Discussion).
 
 ---
 
 ## 10. Dataset composition (replace repeating bullets)
 
-- [ ] **[I can draft]** Keep Table 1; **delete** bullets that only repeat it.
-- [ ] **[I can draft once 0.1 arrives]** Add Table 2 (or appendix table): per-session composition.
-- [ ] **[I can draft]** Table 1 fields: sessions, containers, scans, validated \(n\), excluded \(n\), activity range, **volume range**, held-out \(n\) + activity + volume ranges.
-- [ ] **[I can draft]** Rewrite held-out paragraph: new preparation/session; range is a **shift inside** the global range, not “unique”; it is a **stress test**, not a guarantee against training-distribution bias.
-- [ ] **[I can draft]** One sentence on ROI count vs independent activity labels (from 0.1, or qualitative if unknown).
+- [x] Keep Table 1; delete repeating bullets.
+- [x] Add Table 2: per-session composition.
+- [x] Table 1 fields applied except **volume range** and **excluded \(n\)** (ignored).
+- [x] Held-out paragraph: new session; range inside global range; stress test.
+- [x] ROI vs independent activity labels. **Omitted** (unknown).
 
 ---
 
 ## 11. Figures (this part of the paper only)
 
-- [ ] **[I can draft]** Figure 1 caption: volume rendering; red = contrast inserts; blue = background; explain or remove orange rings (0.5); photo = physical jars + scale/volume; do not repeat the recipe.
-- [ ] **[I can draft]** Figure 2: label panels SPECT vs CT, image vs mask on the figure if not already; add windows/scale from 0.5; caption = PVE blur vs CT reference, not a methods dump.
-- [ ] **[Decision]** Optional small **attrition flowchart** if exclusions are large; else a table row is enough.
-- [ ] **[Decision]** Optional pipeline flowchart if we dropped §5 rationale without a figure.
-
-**I cannot redraw the PNGs** unless you provide new renders (rings removed, scale bar, panel letters). I can only change captions/LaTeX layout.
+- [x] Figure captions rewritten (CT volume rendering; SPECT vs CT segmentation). Orange rings / scale **ignored** (no PNG redraw).
+- [x] No attrition flowchart (decision: no need).
+- [x] Pipeline flowchart added.
 
 ---
 
 ## 12. Appendix (only what we agreed to park)
 
-- [ ] **[I can draft]** Appendix A (optional): compressed PVE/PVC background moved out of the intro.
-- [ ] **[I can draft if materials arrive]** Appendix B: reagent lots, bath model, DICOM/recon preset list.
-- [ ] **[I can draft if 0.1 is a wide table]** Per-scan file list stays out of main text; per-session table stays in main unless huge.
-
-Do **not** appendix: recipe, assay, SPECT/CT protocol, segmentation rule, exclusion rule.
+- [x] Appendix A (PVE background). **Omitted** — intro compressed instead.
+- [x] Appendix B (lots / DICOM). **Omitted** — no materials.
+- [x] Per-session table kept in main text.
 
 ---
 
 ## 13. What this pass does **not** include (later)
 
-- [ ] Radiomics and machine learning architecture (that section will change separately).
-- [ ] Results, NEMA RC head-to-head metrics, conclusion.
-- [ ] Limitations section as a whole (we **will** plant limitation *sentences* in Methods: cold background, iodine/AC, 60 HU, independence, overlaps excluded, \(^{99\mathrm{m}}\)Tc-only).
-- [ ] Data-availability / ethics / funding.
-- [ ] Implementing `paper/additions.md` item 3 (“explain more about the radiomics method”) — that belongs to the next section.
+- [ ] Radiomics and machine learning architecture — **planned, not rewritten.** Still describes old LR+RF / elastic net.
+- [ ] Results, NEMA RC head-to-head metrics, conclusion — **planned, not rewritten.**
+- [x] Limitations / Discussion section. **Done** (cold background, iodine/AC, 60 HU, 1:1 exclusions, pose resampling, \(^{99\mathrm{m}}\)Tc-only, assay not reported).
+- [ ] Data-availability / ethics / funding (`paper/additions.md` item 2: code and dataset URLs — need links).
+- [ ] Implementing more radiomics-method explanation in the paper (belongs with the ML rewrite).
 
 ---
 
 ## 14. Order of work when we start editing
 
-1. You return **§0** (even partial: mark unknown vs not applicable).
-2. I lock **numbers, units, SPECT wording, ground-truth split**.
-3. Abstract variants → you pick.
-4. Intro rewrite + contributions.
-5. Methods restructure (delete rationale; new subsection order).
-6. Fill phantom, assay, imaging, segmentation from §0.
-7. Tables + held-out wording.
-8. Figure captions.
-9. Appendix only if content exists.
-10. One consistency pass (segment counts, session name, µCi vs kBq, no NM in prose).
+1. [x] You return **§0**.
+2. [x] Lock numbers, units, SPECT wording, ground-truth split.
+3. [x] Abstract variant A.
+4. [x] Intro rewrite + contributions.
+5. [x] Methods restructure (delete rationale; new subsection order; flowchart).
+6. [x] Fill phantom / imaging / segmentation from §0 (ignored items omitted).
+7. [x] Tables + held-out wording.
+8. [x] Figure captions.
+9. [x] Appendix skipped (no content).
+10. [x] Consistency pass (2,302; held-out session; kBq/ml; no NM in prose).
 
 ---
 
-**Stop condition for “I cannot write this yet”:** if §0.2 assay and §0.3 collimator/windows/recon/CT geometry are still blank, we can still do §1 rhetoric, §4 intro, §5 delete-rationale, and abstract **scaffolds** with placeholders (`XX`, `TODO`). We should not submit or compile a “final” methods text around empty protocol fields.
+## Remaining (next pass): radiomics / ML / Results / RC
 
-When you are ready, send §0 in any format (bullet answers, email dump, lab notes). Partial answers are fine; I will list what remains unknown in the manuscript as explicit limitations rather than inventing it.
+Decisions already made for that pass:
+- Cannot re-run the model zoo. Use `reports/results.md` as-is (reduced set: 1,766 + 315).
+- Activity RMSE in **kBq/ml**.
+- RC uses **SPECT volume** (`Volume_[ml]_NM_40`).
+- Best **reported** models (session-CV to select): **Ratio+LightGBM** for activity; **physics \(a V_{\mathrm{NM}}+b\)** for volume. Do not keep LR+RF / elastic net as the named winners.
+- Figures planned: held-out identity plots (activity, volume); RC recovery-vs-volume + error-by-volume (once NEMA exists).
+
+**Blocked for NEMA RC.** Same scanner is not enough. Repo has no sphere table and no fitted \(a,b\). Need **one** of:
+- six NEMA hot-sphere \(A_{\mathrm{SPECT}}\) values (same 40% SPECT definition as gelatin) at the stated \(4.1\,\mu\mathrm{Ci/ml}\) fill, **or**
+- already-fitted MIRD \(a,b\).
+
+Until that arrives, do not claim “outperforming a classical NEMA RC curve.”

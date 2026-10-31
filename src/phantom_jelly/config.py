@@ -76,8 +76,33 @@ DIAGNOSTIC_PREFIXES = (
 NM_COUNTS_COLUMN = "Mean_Intensity_counts_NM_40"
 NM_VOLUME_COLUMN = "Volume_[ml]_NM_40"
 SCALE_FACTOR_COLUMN = "Scale_factor_NM_40"
+SETTINGS_COLUMN = "diagnostics_Configuration_Settings_NM_40"
+
+# PyRadiomics intensity discretisation used for every NM-40 feature in the CSVs.
+RADIOMICS_BIN_WIDTH = 2000
 
 RANDOM_STATE = 42
+
+# --------------------------------------------------------------------------------------
+# Experimental sessions (manuscript Table 1)
+# --------------------------------------------------------------------------------------
+# Chronological labels as in the original write-up. Session 0 is the held-out
+# preparation. Segment counts, scan counts and activity ranges are recomputed from
+# the full CSVs; jar counts are the only field that is not stored in the tables and
+# are taken from the experimental log.
+SESSION_BY_ISO_DATE = {
+    "2025-05-20": 1,
+    "2025-06-10": 2,
+    "2025-07-01": 3,
+    "2025-07-08": 4,
+    "2025-07-21": 5,
+    "2025-09-02": 0,
+}
+SESSION_JARS = {1: 3, 2: 3, 3: 3, 4: 4, 5: 4, 0: 4}
+EXPECTED_VALIDATED_SEGMENTS = 2302
+EXPECTED_SCANS = 75
+EXPECTED_JARS = 21
+EXPECTED_SESSIONS = 6
 
 
 def ct_radiomics_columns(columns) -> list[str]:

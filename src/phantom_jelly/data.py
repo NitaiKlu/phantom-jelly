@@ -5,6 +5,7 @@ from __future__ import annotations
 import ast
 import zipfile
 from dataclasses import dataclass, field
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
@@ -37,6 +38,76 @@ def _parse_tuple(series: pd.Series) -> pd.DataFrame:
     out.loc[parsed.index, :] = np.asarray(parsed.tolist(), dtype=float)
     out.columns = [f"{series.name}__{i}" for i in range(width)]
     return out
+
+
+def normalize_session_date(value) -> str | None:
+    """Return an ISO ``YYYY-MM-DD`` session date, or ``None`` if unparseable.
+
+    The full CSVs store ISO dates; the reduced CSVs store ``DD/MM/YYYY``. Both are
+    accepted so session labels in the manuscript can be reconstructed from either file.
+    """
+    if pd.isna(value):
+        return None
+    if isinstance(value, datetime) or isinstance(value, pd.Timestamp):
+        return pd.Timestamp(value).strftime("%Y-%m-%d")
+    text = str(value).strip()
+    for fmt in ("%Y-%m-%d", "%d/%m/%Y", "%Y-%m-%d %H:%M:%S"):
+        try:
+            return datetime.strptime(text[:19] if fmt.endswith("%S") else text, fmt).strftime(
+                "%Y-%m-%d"
+            )
+        except ValueError:
+            continue
+    parsed = pd.to_datetime(text, dayfirst=True, errors="coerce")
+    if pd.isna(parsed):
+        return None
+    return parsed.strftime("%Y-%m-%d")
+
+
+def experimental_inventory(variant: str = "full") -> pd.DataFrame:
+    """Rebuild manuscript Table 1 from the CSVs.
+
+    One row per experimental session. Activity ranges are the min--max of
+    ``Activity_Density_uCiml_NM_40``. ``jars`` is joined from :data:`cfg.SESSION_JARS`
+    because the container identity is not a column in the feature tables.
+    """
+    train, test = load_raw(variant)
+    frame = pd.concat(
+        [train.assign(_split="train"), test.assign(_split="test")], ignore_index=True
+    )
+    frame["_iso"] = frame[cfg.SESSION_KEY].map(normalize_session_date)
+    frame["_session"] = frame["_iso"].map(cfg.SESSION_BY_ISO_DATE)
+    known = frame.dropna(subset=["_session"]).copy()
+    rows = []
+    for session, grp in known.groupby("_session", sort=True):
+        activity = grp["Activity_Density_uCiml_NM_40"]
+        rows.append(
+            {
+                "session": int(session),
+                "split": "held-out" if int(session) == 0 else "train",
+                "date": grp["_iso"].iloc[0],
+                "segments": int(len(grp)),
+                "scans": int(grp[cfg.SCAN_KEY].nunique()),
+                "jars": int(cfg.SESSION_JARS[int(session)]),
+                "activity_min": float(activity.min()),
+                "activity_max": float(activity.max()),
+            }
+        )
+    return pd.DataFrame(rows).sort_values("session").reset_index(drop=True)
+
+
+def radiomics_bin_widths(variant: str = "full") -> set[int]:
+    """Unique PyRadiomics ``binWidth`` values recorded in the NM-40 settings column."""
+    train, test = load_raw(variant)
+    widths: set[int] = set()
+    for frame in (train, test):
+        if cfg.SETTINGS_COLUMN not in frame.columns:
+            continue
+        for raw in frame[cfg.SETTINGS_COLUMN].dropna().unique():
+            settings = ast.literal_eval(raw) if isinstance(raw, str) else raw
+            if isinstance(settings, dict) and settings.get("binWidth") is not None:
+                widths.add(int(settings["binWidth"]))
+    return widths
 
 
 def load_raw(variant: str = "reduced") -> tuple[pd.DataFrame, pd.DataFrame]:

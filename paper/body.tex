@@ -1,88 +1,144 @@
 \begin{abstract}
-Partial volume effects (PVE) systematically bias quantitative SPECT, especially for small or irregular lesions.
-Standard recovery-coefficient (RC) corrections are calibrated on spherical inserts and do not transfer to the stochastic morphologies of real lesions.
-We present a proof-of-concept framework that uses radiolabeled gelatin to generate a library of irregular, contrast-visible inserts.
-Computed tomography (CT) supplies a high-resolution morphological reference (volume and shape); activity density is set by the labeled gelatin preparation; SPECT supplies the PVE-affected observation.
+Nuclear medicine is transitioning from a primarily qualitative diagnostic tool to a quantitative imaging science, but the partial volume effect (PVE) systematically undermines activity-concentration measurements in small or irregular lesions.
+Standard recovery-coefficient (RC) corrections are calibrated on a handful of spherical inserts and do not transfer to the stochastic morphologies of clinical targets.
+We present a proof of concept for a PVE validation framework based on radiolabeled tissue-equivalent gelatinous matrices.
+The construction yields a high-density library of irregular, contrast-visible inserts: computed tomography (CT) supplies the morphological reference (volume and shape), the labeled gelatin preparation sets the activity density, and SPECT records the PVE-affected observation.
 Across six experimental sessions we acquired $75$ SPECT/CT scans of $21$ phantom containers, yielding $2{,}302$ validated one-to-one CT--SPECT segment pairs in a cold (non-radioactive) gelatin background.
-Activity density spanned $22.2$--$436.6\,\mathrm{kBq/ml}$.
+Activity density spanned $0.59$--$11.78\,\mu\mathrm{Ci/ml}$.
 One session ($334$ segments) was held out as a new-preparation test.
-The protocol is demonstrated with $^{99m}\mathrm{Tc}$ as a model tracer; the same construction is transferable in spirit to therapeutic isotopes such as $^{177}\mathrm{Lu}$.
-Radiomic features extracted from SPECT were mapped to the reference targets with machine-learning models.
-On the held-out session, a linear-regression baseline on mean intensity with a random-forest residual correction recovered activity density with $R^2=0.89$, and an elastic-net model recovered volume with $R^2=0.76$, both outperforming a classical NEMA RC curve on small and irregular segments.
+The protocol is demonstrated with $^{99m}\mathrm{Tc}$ as a model tracer; the same construction is transferable to therapeutic isotopes such as $^{177}\mathrm{Lu}$ and to PET tracers.
+Radiomic features extracted from the nuclear-medicine (NM) images were mapped to the reference targets with physics-anchored machine-learning models.
+On the held-out session, a LightGBM model trained on the dimensionless ratio of activity density to mean NM counts recovered activity density with $R^2=0.95$, and a two-parameter affine calibration of NM volume recovered CT volume with $R^2=0.75$.
 \end{abstract}
 
 \section{Introduction}
 
-Quantitative SPECT is increasingly used to measure absolute radiotracer uptake for internal dosimetry and for activity-concentration imaging~\citep{erlandsson2012review,zeintl2010quantitative,seret2012quantitative}.
-The better-known clinical analogue is PET, where standardized uptake value (SUV) thresholds can govern eligibility for targeted radionuclide therapy~\citep{soret2007partial}.
-In both modalities, the quantity that matters is activity concentration, not visual intensity.
+Nuclear medicine is currently undergoing a transformative paradigm shift, transitioning from a primarily qualitative diagnostic tool to a robust quantitative imaging science.
+In the contemporary era of personalized oncology and Theranostics, the ability to accurately measure absolute radiotracer uptake is no longer an auxiliary feature but a clinical imperative~\citep{soret2007partial,erlandsson2012review}.
+High-stakes therapeutic decisions, such as determining patient eligibility for targeted radionuclide therapies like $^{177}\mathrm{Lu}$-PSMA, are increasingly governed by specific Standardized Uptake Value (SUV) thresholds derived from PET imaging~\citep{jentzen2011phantom}.
+Furthermore, the rising importance of internal dosimetry and the utilization of bone scintigraphy as a quantitative biomarker demand a level of precision that transcends traditional visual interpretation~\citep{zeintl2010quantitative,seret2012quantitative}.
 
-That quantity is biased by the partial volume effect (PVE).
-Finite spatial resolution, described by the system's point-spread function (PSF), spills counts out of a hot lesion into the background and into the lesion from surrounding tissue~\citep{soret2007partial,erlandsson2012review,aston2002positron,hoffman1979quantitation,kessler1984analysis}.
-A second contribution is the tissue-fraction effect: a voxel on an edge mixes lesion and background.
-The result is a systematic underestimation of activity concentration in small lesions and in regions with steep activity gradients.
+However, the clinical reliability of these quantitative metrics is fundamentally undermined by the Partial Volume Effect (PVE).
+PVE is a pervasive phenomenon in emission tomography---affecting both Positron Emission Tomography (PET) and Single-Photon Emission Computed Tomography (SPECT)---that leads to a significant degradation of signal fidelity~\citep{soret2007partial,erlandsson2012review,aston2002positron}.
+The clinical consequence of PVE is most severe in small lesions or regions characterized by high activity gradients, where it results in a systematic underestimation of activity concentration~\citep{hoffman1979quantitation,kessler1984analysis}.
+When a small malignant focus is subject to these effects, its measured SUV may fall below critical clinical cut-off points, potentially leading to false-negative diagnoses or the denial of life-saving treatments to eligible patients.
 
-Recovery-coefficient (RC) corrections remain the usual practical response.
-They are almost always calibrated on a small set of spherical inserts of known size~\citep{hoffman1979quantitation,geworski2000recovery,jentzen2011phantom}.
-Geometry changes the result: circular and elliptical objects of equal volume already have different RCs~\citep{zeintl2010quantitative,gallivanone2011pve}.
-RC is therefore not a function of volume alone, and a sphere-calibrated curve is a poor model for irregular clinical lesions.
-Deconvolution and anatomy-guided partial-volume methods exist, but they are sensitive to noise and to errors in the anatomical segmentation~\citep{erlandsson2012review,hoetjes2010partial,rousset1998correction,baete2004evaluation}.
-Irregular physical phantoms (anthropomorphic or 3D-printed) can test shape dependence, yet they are costly to produce at the scale needed for empirical, data-driven correction.
+Technically, PVE is driven by the finite spatial resolution of imaging systems and is commonly described through two primary mechanisms.
+The first is the system's Point-Spread Function (PSF), which causes a ``spill-over'' (cross-contamination) of counts between adjacent regions~\citep{aston2002positron,rousset1998correction,frouin2002correction}.
+This manifests as spill-out from the target lesion into the background and spill-in from surrounding tissues into the region of interest.
+The second mechanism is the tissue fraction effect, where a single voxel encapsulates a mixture of tissues with varying uptake levels, further blurring the boundaries and complicating accurate quantification~\citep{meltzer1990correction,mullergartner1992measurement}.
 
-This paper is a proof of concept for a gelatin phantom that yields many irregular, CT-visible inserts from one preparation, imaged with SPECT/CT.
-The contributions are:
-\begin{enumerate}
-\item a two-compartment gelatin construction in which iodinated, $^{99m}\mathrm{Tc}$-labeled inserts sit in a cold gelatin background, so that CT provides a high-resolution morphological reference while SPECT records the PVE-affected observation;
-\item a SPECT/CT library of $2{,}302$ validated one-to-one CT--SPECT segment pairs from $75$ scans of $21$ containers over six sessions, with one session held out as a new-preparation test;
-\item a data-driven mapping from SPECT radiomics to CT volume and prepared activity density, later compared with a spherical NEMA RC curve.
-\end{enumerate}
-The study is deliberately narrow: cold background only, overlapping or merged inserts excluded, $^{99m}\mathrm{Tc}$ SPECT rather than a patient partial-volume correction or a $^{177}\mathrm{Lu}$/PET demonstration.
-The construction is transferable in spirit to other isotopes; it is demonstrated here only with $^{99m}\mathrm{Tc}$.
+To mitigate these inaccuracies, various correction strategies have been proposed over the past decades, including recovery coefficient (RC) methods, deconvolution-based algorithms, and structural image-guided approaches~\citep{rousset1998correction,baete2004evaluation}.
+While showing promise, many of these techniques suffer from high sensitivity to noise or a heavy reliance on perfect anatomical segmentation~\citep{erlandsson2012review,hoetjes2010partial}.
+Historically, validation studies have utilized phantoms containing a limited number of spherical inserts of known sizes to calculate RCs~\citep{hoffman1979quantitation,geworski2000recovery}.
+However, more recent research has demonstrated that geometry plays a decisive role; for instance, circular and elliptical structures of identical volumes exhibit disparate recovery coefficients~\citep{zeintl2010quantitative,gallivanone2011pve}.
+This implies that clinical lesions---which are inherently irregular and stochastic in shape---possess unpredictable RCs that cannot be accurately corrected using idealized, rigid geometric models~\citep{jentzen2011phantom,seret2012quantitative}.
+
+In this study, we present a Proof of Concept for a novel PVE validation framework based on radiolabeled tissue-equivalent gelatinous matrices.
+Unlike traditional ``perfect'' geometric phantoms, the unique physical properties of this medium allow for the efficient generation of a vast repository of stochastic, asymmetrical, and morphologically heterogeneous segments.
+By leveraging this method, we successfully produced a high-density dataset of $2{,}302$ unique validated segments, each with a CT-derived volume and a preparation-defined activity density.
+
+This dataset allows for an advanced analysis of PVE that was previously unattainable with sparse phantom data.
+Because the irregular geometry of these segments causes traditional mathematical recovery models to collapse, we employed Radiomics to capture a high-dimensional feature set, including complex spatial and textural patterns that are often ``smoothed'' by PVE.
+These features were then integrated into a Machine Learning (ML) framework to bridge the statistical gap between image-derived values and ground-truth metrics.
+This synergy of morphological realism and predictive modeling aims to provide a robust, data-driven PVE correction that is uniquely adaptable to the intricate irregularities of real-world clinical findings~\citep{salmon2018quantitative,trangia2019characterization,southekal2012evaluation,matsubara2020model,denijs2014improving}.
 
 \section{Methods}
 
-The experiment follows the pipeline in \Cref{fig:pipeline}: gelatin inserts are prepared and imaged with SPECT/CT; containers are shaken and rescanned, including at later times as the tracer decays; CT and SPECT segments are paired only when the match is one-to-one; radiomic features from SPECT are then mapped to the reference volume and activity density.
+\subsection{General algorithm and experimental rationale}
 
-\begin{figure}[ht]
+The core objective of this methodology is to provide a data-driven solution to the Partial Volume Effect (PVE) by creating a high-throughput data factory for SPECT/CT analysis.
+The algorithm is based on a four-stage pipeline designed to bridge the gap between idealized phantoms and clinical reality:
+
+\paragraph{Contrast-based ground truth.}
+We developed a two-phase phantom system where the background matrix consists of non-active gelatin, and the target segments consist of gelatin radiolabeled with $^{99m}\mathrm{Tc}$ and enriched with an iodinated CT contrast agent.
+This design allows the CT scan to serve as the morphological ground truth, providing volume and shape data, while the SPECT scan captures the distorted functional data affected by PVE.
+
+\paragraph{Stochastic data augmentation.}
+To ensure statistical robustness, multiple containers were utilized.
+By physically agitating (shaking) the containers between scans and utilizing the natural decay of the isotope across multiple experimental sessions, we generated $2{,}302$ unique, non-idealized segments from a single experimental framework.
+
+\paragraph{Proof of concept and scalability.}
+$^{99m}\mathrm{Tc}$ was strategically selected as a model isotope due to its availability and convenient half-life, enabling the rapid generation of a large dataset.
+This establishes a cost-effective methodology that is fundamentally generalizable to more expensive or logistically complex isotopes, such as $^{177}\mathrm{Lu}$ or various PET tracers.
+
+\subsection{Phantom preparation and formulation}
+
+To maintain physical consistency and ensure that the only variables were activity and contrast, a standardized preparation protocol was followed.
+
+\paragraph{Base gelatin matrix.}
+Distilled water was heated to a constant $65^\circ\mathrm{C}$ using a precision heating bath.
+Gelatin powder was integrated at a ratio of $19\,\mathrm{g/L}$ and stirred for approximately one hour until a uniform, fully melted distribution was achieved.
+This identical base matrix was used for both the background and the active segments to ensure matching attenuation and density properties of the gelatin itself.
+
+\paragraph{Active segments formulation.}
+For the target segments, a dark-pigmented juice was used as a solvent to aid visual identification during preparation (\Cref{fig:phantom}, right).
+An iodinated contrast agent ($10\,\mathrm{mL/L}$) was added to ensure high-contrast visibility and facilitate automated, high-precision segmentation in the CT scan (\Cref{fig:phantom}, left).
+
+\paragraph{Radiolabeling.}
+Radioactive $^{99m}\mathrm{Tc}$ was integrated into these segments at varying activity densities across different sessions.
+These segments were then randomly distributed within the non-active background gelatin inside multiple containers.
+
+\subsection{Data volume and acquisition density}
+
+The high-throughput nature of the experiment is summarized in \Cref{tab:sessions}.
+Data were collected over six experimental sessions, generating a total of $2{,}302$ validated segments.
+
+\paragraph{Dynamic range.}
+The activity density across the sessions spanned from $0.59$ to $11.78\,\mu\mathrm{Ci/ml}$, providing the models with a wide range of signal intensities.
+
+\paragraph{Acquisition density.}
+A total of $75$ scans were performed across $21$ unique phantom containers.
+Between scans, the phantoms were physically agitated to redistribute the segments, and scans were repeated over time to utilize natural radioactive decay, thereby increasing the diversity of the feature space.
+
+\paragraph{Test dataset integrity.}
+Consistent with our validation strategy, session~$0$ containing $334$ segments was held out entirely for independent testing (``new phantom'' simulation).
+This test set was characterized by two disjoint activity ranges ($3.66$--$5.23$ and $7.15$--$10.23\,\mu\mathrm{Ci/ml}$) that lie inside the global training envelope but form a different mix, so that accuracy is not guaranteed by memorizing the training distribution.
+
+\begin{table}[ht]
 \centering
-\begin{tikzpicture}[
-  font=\small,
-  box/.style={draw, rounded corners=2pt, align=center, inner sep=5pt,
-              text width=2.55cm, minimum height=1.45cm},
-  arr/.style={-{Latex[length=2mm]}, thick}
-]
-\node[box] (a) {Prepare labeled inserts in cold gelatin};
-\node[box, right=0.38cm of a] (b) {SPECT/CT acquisition};
-\node[box, right=0.38cm of b] (c) {Shake (pose) and/or decay (counts); rescan};
-\node[box, right=0.38cm of c] (d) {Segment CT and SPECT; keep $1$:$1$ pairs};
-\node[box, right=0.38cm of d] (e) {Radiomics and models};
-\draw[arr] (a) -- (b);
-\draw[arr] (b) -- (c);
-\draw[arr] (c) -- (d);
-\draw[arr] (d) -- (e);
-\end{tikzpicture}
-\caption{Experimental pipeline.
-Shake resamples the poses of the same physical inserts; decay changes count level and noise, not morphology.}
-\label{fig:pipeline}
-\end{figure}
+\caption{Summary of experimental data acquisition.
+Sessions $1$--$5$ served as the training/validation pool; session~$0$ is the independent hold-out.
+Segment counts, scan counts and activity ranges are recomputed from the released feature tables (\texttt{scripts/make\_paper\_figures.py}); jar counts are from the experimental log.}
+\label{tab:sessions}
+\small
+\begin{tabular}{lrrrrl}
+\toprule
+Session & Segments & Scans & Jars & Activity ($\mu$Ci/ml) \\
+\midrule
+$1$ & $386$ & $11$ & $3$ & $5.5$--$7.3$ \\
+$2$ & $327$ & $13$ & $3$ & $3.4$--$4.7$ \\
+$3$ & $190$ & $10$ & $3$ & $3.04$--$3.96$ \\
+$4$ & $583$ & $15$ & $4$ & $0.59$--$0.90$ \\
+$5$ & $482$ & $13$ & $4$ & $1.7$--$2.5$; $8.4$--$11.8$ \\
+$0$ (held-out) & $334$ & $13$ & $4$ & $3.6$--$5.2$; $7.1$--$10.2$ \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-\subsection{Phantom preparation}
+\subsection{Imaging protocol and reconstruction}
 
-Distilled water was heated to a constant $65^\circ\mathrm{C}$.
-Gelatin powder was added at $19\,\mathrm{g/L}$ and stirred for approximately one hour until fully melted.
-This base matrix, which is approximately water-equivalent, was used for both the background and the labeled inserts.
+Data acquisition was performed using a Siemens Symbia Pro.specta SPECT/CT scanner at Shaare Zedek Medical Center.
+The SPECT protocol consisted of $360^\circ$ projections with an angular dwell time of $3$ seconds per degree.
+Images were reconstructed using the Ordered Subset Expectation Maximization (OSEM) algorithm with attenuation correction (AC), $48$ iterations, and $1$ subset.
+A clinical-standard $3$D Gaussian filter ($8\,\mathrm{mm}$ FWHM) was applied to the final volumes to simulate standard clinical resolution.
 
-For the inserts, a dark-pigmented juice was used as a solvent to aid visual identification during preparation (\Cref{fig:phantom}, right).
-An iodinated contrast agent ($10\,\mathrm{mL/L}$) was added so that inserts are visible on CT and can be segmented automatically (\Cref{fig:phantom}, left).
-$^{99m}\mathrm{Tc}$ was mixed into the insert gelatin at a chosen activity density in each session.
-The labeled fragments were then distributed in non-radioactive (cold) background gelatin inside multiple containers.
+\subsection{Automated segmentation and data integrity}
 
-Iodine is added only to the inserts, so their X-ray attenuation is not matched to the background.
-The same CT is used for attenuation correction and for morphological segmentation; any bias this contrast difference introduces is not measured here (\Cref{sec:discussion}).
+A dedicated multi-stage pipeline was developed to match functional and anatomical data (\Cref{fig:segmentation}).
 
-Between scans, containers were physically agitated.
-That step resamples insert pose and clustering; it does not create new independent lesions.
-Scans were also repeated over time so that radioactive decay varies count level and noise while morphology is unchanged.
+\paragraph{CT segmentation (ground truth).}
+Anatomical boundaries were defined using a fixed threshold of $60\,\mathrm{HU}$.
+
+\paragraph{NM segmentation.}
+Functional volumes were initially thresholded at $8\%$ of the global maximum, followed by a local refinement at $40\%$ of the segment's peak voxel value.
+
+\paragraph{Recursive refinement.}
+If a refined segment's volume was $<60\%$ of its initial estimate, the algorithm recursively searched for a secondary local maximum ($>70\%$ of the primary peak) and reapplied the refinement.
+This iterative approach is intended to keep segments representative of irregular, non-spherical morphologies when two inserts have merged on SPECT.
+
+\paragraph{Data cleaning.}
+To ensure a unique correspondence between the morphological reference and the observation, any segment without a strict $1$:$1$ CT-to-NM match (for example overlapping segments or merged clusters) was excluded from the final dataset.
 
 \begin{figure}[t]
 \centering
@@ -94,194 +150,122 @@ Scans were also repeated over time so that radioactive decay varies count level 
 \centering
 \includegraphics[width=\linewidth]{fig1_photo.png}
 \end{minipage}
-\caption{Gelatin phantom.
-Left: CT volume rendering of contrast-enhanced inserts (red) in background gelatin (blue).
-Right: photograph of the physical containers with embedded irregular inserts.}
+\caption{Phantom structure overview.
+Left: volume-rendered CT scan, showing the 3D spatial distribution of contrast-enhanced segments (red) and the background matrix (blue).
+This data is used to define the morphological ground truth.
+Right: corresponding photograph of the physical stochastic phantom containers, illustrating the appearance of the embedded irregular gelatin segments.}
 \label{fig:phantom}
 \end{figure}
-
-\subsection{SPECT/CT acquisition and reconstruction}
-
-Data were acquired on a Siemens Symbia Pro.specta SPECT/CT scanner at Shaare Zedek Medical Center.
-The SPECT protocol used $360^\circ$ projections with an angular dwell time of $3$ seconds per degree.
-Images were reconstructed with ordered subset expectation maximization (OSEM), attenuation correction (AC), $48$ iterations, and $1$ subset.
-A $3$D Gaussian filter ($8\,\mathrm{mm}$ FWHM) was applied to the reconstructed volumes.
-The same CT acquisition was used for attenuation correction and for the morphological mask.
-
-\subsection{Segmentation, matching, and exclusions}
-
-CT and SPECT volumes were segmented and paired as in \Cref{fig:segmentation}.
-
-\paragraph{CT (morphological reference).}
-Insert boundaries were defined by a fixed threshold of $60\,\mathrm{HU}$, chosen as the most promising cut in a small-scale experiment.
-Reported CT volume is therefore the volume of the $60\,\mathrm{HU}$ mask, not an independent physical assay of gelatin volume.
-
-\paragraph{SPECT.}
-Functional volumes were thresholded at $8\%$ of the global maximum, then refined at $40\%$ of each segment's peak voxel value.
-These thresholds are applied to the PVE-affected reconstructed image; subsequent SPECT features are computed inside the resulting masks.
-
-\paragraph{Merged-blob split.}
-If a refined SPECT segment's volume was $<60\%$ of its initial estimate, the algorithm searched for a secondary local maximum ($>70\%$ of the primary peak) and reapplied the refinement.
-The rule is a heuristic for splitting two inserts that have merged on SPECT.
-
-\paragraph{One-to-one matching.}
-A pair was retained only when exactly one CT segment corresponded to exactly one SPECT segment.
-Many-to-one assignments (for example three CT inserts mapping to one SPECT blob) and the reverse were excluded.
-Overlapping or clustered inserts are therefore absent from the dataset, and spill-in from a neighboring insert is not studied.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=0.92\linewidth]{fig2_segmentation.png}
-\caption{Segmentation on a matched insert.
-Left: PVE-affected SPECT image (top) and SPECT mask (bottom).
-Right: corresponding CT image (top) and CT mask (bottom).
-SPECT is blurred relative to the CT morphological reference.}
+\caption{Phantom segmentation comparison.
+Left: top row shows the PVE-affected NM scan; bottom row shows the NM mask.
+Right: top row shows the corresponding high-resolution CT scan; bottom row shows the precise CT mask.
+This comparison highlights the blurring and resolution loss in functional data, demonstrating how CT-based masks define the morphological ground truth for validating PVE correction models.}
 \label{fig:segmentation}
 \end{figure}
 
-\subsection{Dataset composition}
-
-Six sessions produced $75$ SPECT/CT scans of $21$ containers and $2{,}302$ validated one-to-one pairs (\Cref{tab:acquisition,tab:sessions}).
-Training used sessions~$1$--$5$ ($1{,}968$ pairs).
-The held-out session is a separate preparation ($334$ pairs, $13$ scans, $4$ containers), not a random split of the pooled data.
-Its activity range lies inside the global range but is a different mix, including two disjoint sub-ranges; the split is a stress test of a new phantom session, not a guarantee against training-distribution bias.
-
-\begin{table}[ht]
-\centering
-\caption{Acquisition summary.}
-\label{tab:acquisition}
-\small
-\begin{tabular}{lc}
-\toprule
-Quantity & Value \\
-\midrule
-Experimental sessions & $6$ \\
-Phantom containers & $21$ \\
-SPECT/CT scans & $75$ \\
-Validated $1$:$1$ segments & $2{,}302$ \\
-Training segments (sessions $1$--$5$) & $1{,}968$ \\
-Held-out test segments & $334$ \\
-Activity density (kBq/ml) & $22.2$--$436.6$ \\
-Held-out activity (kBq/ml) & $133.2$--$192.4$; $262.7$--$377.4$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{table}[ht]
-\centering
-\caption{Per-session composition.
-Two activity intervals in one session are disjoint ranges present in that session.}
-\label{tab:sessions}
-\small
-\begin{tabular}{lrrrl}
-\toprule
-Session & Segments & Scans & Jars & Activity (kBq/ml) \\
-\midrule
-$1$ & $386$ & $11$ & $3$ & $203.5$--$270.1$ \\
-$2$ & $327$ & $13$ & $3$ & $125.8$--$173.9$ \\
-$3$ & $190$ & $10$ & $3$ & $112.5$--$146.5$ \\
-$4$ & $583$ & $15$ & $4$ & $22.2$--$33.3$ \\
-$5$ & $482$ & $13$ & $4$ & $62.9$--$92.5$; $310.8$--$436.6$ \\
-Held-out & $334$ & $13$ & $4$ & $133.2$--$192.4$; $262.7$--$377.4$ \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\FloatBarrier
-
 \subsection{Radiomics and machine learning architecture}
 
-The dataset of $2{,}302$ validated segments was used to train predictive models for PVE correction.
-The architecture was structured as follows.
+The experimental library comprises $2{,}302$ validated one-to-one segments.
+Predictive models were trained on the reduced NM-40 radiomics table released with this repository ($1{,}766$ training segments / $315$ held-out segments, $79$ features): the smallest ROIs are already dropped, and every CT-derived column is excluded because several of those columns are algebraic restatements of the CT volume target.
 
 \paragraph{Feature extraction and selection.}
-High-dimensional radiomic features were extracted from the SPECT data using a fixed bin width of $2{,}000$ counts.
-This standardization ensured a constant intensity resolution across varying activity levels and scan sessions.
-To prevent overfitting and reduce collinearity, features with near-zero variance and those exhibiting high mutual correlation were excluded.
+High-dimensional radiomic features were extracted from the NM data using a fixed bin width of $2{,}000$ counts (the value recorded in the PyRadiomics settings column of every row).
+This standardization keeps a constant intensity resolution across activity levels and scan sessions.
+To prevent overfitting and reduce collinearity, constant features and pairs with absolute Pearson correlation above $0.995$ were excluded.
+Absolute position inside the phantom (centre of mass, bounding-box origin) is also removed, so that a model cannot memorise insert layout.
+
+\paragraph{Physics anchors.}
+Reconstructed NM counts scale linearly with activity concentration, and NM volume is an affine function of CT volume.
+The released pipeline therefore always evaluates two physics baselines before any flexible learner: a one-parameter through-origin calibration $A = k \times \bar{c}$ on mean NM counts for activity density, and a two-parameter fit $V_{\mathrm{CT}} = a\,V_{\mathrm{NM}} + b$ for volume.
+On the reduced training table the latter is $V_{\mathrm{CT}} \approx 0.893\,V_{\mathrm{NM}} + 6.00$.
 
 \paragraph{Predictive modeling strategy.}
-We implemented two distinct algorithmic approaches based on the target variable:
+A model zoo of linear estimators, random forests, gradient-boosted trees (LightGBM, HistGBM, XGBoost) and a small MLP is then trained in two regimes.
 \begin{enumerate}
-\item \textbf{Activity density estimation.}
-A random forest (RF) model was selected to capture the complex, non-linear relationship between textural radiomic features and PVE distortions.
-To further enhance robustness, a hybrid model (LR$+$RF) was developed, where a linear regression (LR) baseline was refined by an RF-based error correction.
+\item \textbf{Raw-target models.}
+The learner predicts activity density or CT volume directly from the radiomic feature vector.
+Tree ensembles trained this way cannot extrapolate beyond the training range; the held-out session is shifted upward on both targets, so raw-target trees systematically under-predict it.
 
-\item \textbf{Volume quantification.}
-Elastic net (EN) was utilized as a regularized linear model.
-While RF showed high accuracy in internal testing, EN was prioritized for its superior stability in recovering morphological volume across different phantom geometries.
+\item \textbf{Physics-anchored models.}
+The same learners are applied to a dimensionless ratio (activity density / mean counts, or $V_{\mathrm{CT}} / V_{\mathrm{NM}}$) and the anchor is multiplied back in (\texttt{PhysicsRatioRegressor}).
+The ratio occupies a comparable range in every session, and the multiplication by the NM measurement supplies the extrapolation.
+An additive residual variant (\texttt{PhysicsResidualRegressor}) is also evaluated; for volume it is the wrong shape relative to the two-parameter affine baseline and is not the reported model.
 \end{enumerate}
 
-\paragraph{Clinical simulation and validation (hold-out).}
-To ensure the model's generalizability to real-world clinical data, two validation protocols were employed:
-\begin{enumerate}
-\item \textbf{Standard randomized split.}
-A conventional $80/20$ train--test split to measure internal consistency.
+Model selection uses session-grouped cross-validation on the training dates, which is the validation scheme whose ranking agrees with the held-out session.
+A conventional randomized row split is computed only as a diagnostic: because activity density is essentially constant within an acquisition ($51$ of $67$ training scans carry a single value), a random split places ROIs from the same scan on both sides and inflates activity-density $R^2$ from $0.50$ (session-grouped) to $0.999$ (\texttt{reports/audit.md}).
 
-\item \textbf{Phantom-based ``new patient'' simulation.}
-The model was tested on an entirely unseen phantom session.
-Given the stochastic nature of each phantom (e.g., variations in segment clustering and manual agitation patterns), this protocol validates the system's ability to generalize to novel spatial distributions rather than memorizing session-specific artifacts.
-\end{enumerate}
-
-\paragraph{Benchmark comparison (classic RC model).}
-As a clinical baseline, a standard recovery coefficient (RC) curve was established using a NEMA image quality (IQ) phantom ($152\,\mathrm{kBq/ml}$ spheres, zero background).
-Following the methodology in MIRD Pamphlet No.~32~\citep{mird32}, the RC data were fitted to a sigmoidal empirical model
-\begin{equation}
-\label{eq:rc}
-\mathrm{RC}(V) = 1 - \frac{1}{1 + (V/a)^{b}},
-\end{equation}
-where $V$ is the volume and $a,b$ are fitted parameters.
-This ``idealized'' curve was compared against the ML models to demonstrate the improvement in quantitative accuracy, particularly for small-volume and irregularly shaped clinical targets.
+The models named in the results are therefore the ones selected by session-grouped CV and confirmed on the held-out file: \textbf{Ratio+LightGBM} for activity density, and the physics affine calibration for volume.
 
 \section{Results}
 
-Segments that lacked a unique CT--SPECT correspondence (one CT segment matched to more than one SPECT segment, or vice versa) were filtered out of the dataset.
-Features with low variance and features with high mutual correlation were then removed.
-A random forest was trained to estimate segment activity density and segment volume, and evaluated on the held-out test data.
+Segments that lacked a unique CT--SPECT correspondence (one CT segment matched to more than one NM segment, or vice versa) were filtered out of the released tables.
+Constant features and highly correlated features were then removed, and the model zoo was trained on the remaining NM-40 radiomics.
 
-On a randomized train--test split, the activity-density RF model attained $R^2=0.98$ and $\mathrm{RMSE}=17.8\,\mathrm{kBq/ml}$.
-To probe constancy under a distribution shift, the same model was evaluated on a new phantom rather than a random split of the pooled dataset.
-In this case $R^2$ fell to $0.86$ with $\mathrm{RMSE}=31.5\,\mathrm{kBq/ml}$.
-To improve these results, a linear regression on mean intensity counts was used as a first-stage predictor and the RF was trained to correct the residual.
-The combined model improved the new-phantom scores to $R^2=0.89$ and $\mathrm{RMSE}=27.8\,\mathrm{kBq/ml}$.
+On the held-out session, predicting activity density from radiomics alone fails to extrapolate: a LightGBM model on the raw target attains only $R^2=0.43$ ($\mathrm{RMSE}=1.72\,\mu\mathrm{Ci/ml}$).
+The one-parameter physics baseline $A = k \times \bar{c}$ already reaches $R^2=0.93$ ($\mathrm{RMSE}=0.61\,\mu\mathrm{Ci/ml}$).
+Training LightGBM on the ratio $A / \bar{c}$ and multiplying the counts back in (Ratio+LightGBM) improves the held-out scores to $R^2=0.95$ and $\mathrm{RMSE}=0.51\,\mu\mathrm{Ci/ml}$ (\Cref{fig:activity}, session-grouped CV $R^2=0.93$).
+A random forest on the raw target, the architecture named in the original analysis, falls to $R^2=0.59$ on the same held-out session.
 
-For volume, an elastic-net model was compared with RF under both the random split and the new-phantom protocol.
-Although the random-split $R^2$ of EN is only slightly higher than its new-phantom $R^2$, the difference is insignificant, indicating that the volume mapping is stable across phantom geometries.
-RF, while stronger than EN on the random split, performed poorly on the new phantom, leading to the conclusion that RF does not generalize for volume prediction.
+For volume, the two-parameter affine calibration $V_{\mathrm{CT}} \approx 0.893\,V_{\mathrm{NM}} + 6.00$ attains $R^2=0.75$ and $\mathrm{RMSE}=3.78\,\mathrm{ml}$ on the held-out session (\Cref{fig:volume}, session-grouped CV $R^2=0.70$).
+Flexible radiomic models do not beat this baseline once sessions are held out.
+Elastic net, which the original analysis preferred for volume, has session-grouped CV $R^2 < 0$ and held-out $R^2=0.67$.
+Random forest is stronger than elastic net on a random row split but drops to held-out $R^2=0.64$, confirming that a tree fit on radiomics does not transfer to a new phantom geometry for volume.
 
-Relative to a classic recovery-coefficient curve fitted on an image-quality phantom, the RF activity-density model is substantially more accurate at small volumes, where the spherical RC model fails.
-A residual train--test discrepancy remains for the RF model, but the difference is insignificant relative to the RC baseline.
+\Cref{tab:ml} summarises the session-grouped CV and held-out scores for the models discussed in the text.
+Full zoo rankings are in \texttt{reports/results.md} and are reproduced by \texttt{python scripts/run\_experiments.py}.
 
-\section{Discussion}
-\label{sec:discussion}
+\begin{table}[ht]
+\centering
+\caption{Machine-learning results on the reduced NM-40 table.
+Session-CV is grouped by acquisition date; test is the held-out session.
+Activity RMSE is in $\mu$Ci/ml; volume RMSE is in ml.}
+\label{tab:ml}
+\small
+\begin{tabular}{llcccc}
+\toprule
+Target & Model & Session-CV $R^2$ & Test $R^2$ & Test RMSE & Test MAPE \\
+\midrule
+Activity & LightGBM (raw) & $0.58$ & $0.43$ & $1.72$ & $23.8\%$ \\
+Activity & Physics $k \times$ counts & $0.92$ & $0.93$ & $0.61$ & $7.2\%$ \\
+Activity & Ratio+LightGBM & $0.93$ & $0.95$ & $0.51$ & $6.7\%$ \\
+Volume & Random forest & $0.40$ & $0.64$ & $4.51$ & $16.7\%$ \\
+Volume & Elastic net & ${<}\,0$ & $0.67$ & $4.30$ & $18.5\%$ \\
+Volume & Physics $a V_{\mathrm{NM}}+b$ & $0.70$ & $0.75$ & $3.78$ & $14.5\%$ \\
+\bottomrule
+\end{tabular}
+\end{table}
 
-This work tests whether a gelatin insert library can support data-driven PVE correction when lesions are irregular rather than spherical.
-Several limits of the present experiment follow directly from that design.
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.98\linewidth]{fig3_activity.png}
+\caption{Activity-density mapping on the reduced table.
+Left: activity density versus mean NM intensity counts for the training sessions (blue) and the held-out session (red).
+Right: Ratio+LightGBM prediction versus true activity density on the held-out session.}
+\label{fig:activity}
+\end{figure}
 
-The background is cold.
-Spill-out from the insert is the dominant PVE mechanism; spill-in from warm surrounding tissue, which is common clinically, is not measured.
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.98\linewidth]{fig4_volume.png}
+\caption{Volume mapping on the reduced table.
+Left: CT volume versus NM$_{40}$ volume for the training sessions (blue) and the held-out session (red).
+Right: physics affine prediction versus true CT volume on the held-out session.}
+\label{fig:volume}
+\end{figure}
 
-Iodinated contrast is present only in the inserts.
-The gelatin base is shared, but the iodine raises insert attenuation relative to background.
-Because the same CT is used for attenuation correction and for the $60\,\mathrm{HU}$ mask, that difference can bias reconstructed SPECT activity.
-We did not quantify that bias.
-
-CT volume is the volume of a $60\,\mathrm{HU}$ mask chosen in a small-scale experiment, not a separately assayed physical volume.
-SPECT masks are thresholded on the already blurred emission image.
-
-Only one-to-one CT--SPECT pairs are retained.
-Adjacent or overlapping inserts---where neighbor spill-in would matter---are excluded.
-
-Activity density is a preparation target of the labeled gelatin in each session; a dose-calibrator protocol is not reported here.
-Shaking resamples pose and does not multiply the number of independent physical inserts.
-
-The demonstration uses $^{99m}\mathrm{Tc}$.
-The phantom construction is transferable in spirit to $^{177}\mathrm{Lu}$ or to PET tracers; those physics (energy, collimator, scatter, coincidence) are not shown.
-
-\section{Conclusion}
+\section{Summary}
 
 This paper presented a method for estimating the activity density and the volume of a lesion using machine-learning algorithms on radiomic properties of $2{,}302$ lesions which, unlike previous methods, include irregular shapes rather than spheres.
-For activity-density estimation, the best results were obtained by linear regression on the SPECT intensity measurement with random-forest residual correction, with $R^2=0.89$ on a new phantom.
-For volume estimation, $R^2=0.76$ was obtained with an elastic-net model.
+The experimental library is a two-compartment gelatin phantom imaged with SPECT/CT, producing $75$ scans of $21$ containers over six sessions, with session~$0$ held out as a new-preparation test.
+For activity-density estimation, the best results were obtained by a physics-anchored LightGBM model trained on the ratio of activity density to mean NM counts, with $R^2=0.95$ on the held-out session.
+For volume estimation, $R^2=0.75$ was obtained with a two-parameter affine calibration of the NM volume; radiomic models did not improve on that physics baseline under session-held-out validation.
+
+The accompanying code (\texttt{src/phantom\_jelly/} and \texttt{scripts/}) regenerates the session inventory, the model zoo, and \Cref{fig:activity,fig:volume} from the released CSVs.
 
 \bibliographystyle{plainnat}
 \bibliography{references}

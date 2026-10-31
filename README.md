@@ -25,9 +25,10 @@ dependency — the pipeline starts from the extracted CSVs. See the note in
 ## Run
 
 ```bash
-python scripts/audit_data.py       # -> reports/audit.md
-python scripts/run_experiments.py  # -> reports/results.md, reports/results.csv
-python scripts/run_surrogate.py    # -> reports/surrogate.md   (conditional CT exception)
+python scripts/audit_data.py         # -> reports/audit.md
+python scripts/run_experiments.py    # -> reports/results.md, reports/results.csv
+python scripts/run_surrogate.py      # -> reports/surrogate.md   (conditional CT exception)
+python scripts/make_paper_figures.py # -> paper/figures/fig3_*.png, fig4_*.png, reports/paper_numbers.md
 ```
 
 `data/raw/Jelly_Phantom.zip` is unpacked automatically on first use.
@@ -42,8 +43,10 @@ src/phantom_jelly/
   evaluation.py  grouped CV schemes, metrics, leakage quantification
   surrogate.py   NM-only surrogates for CT radiomics (conditional exception)
 scripts/         entry points, each writing a report
+  make_paper_figures.py  session inventory, paper figures, number checks
 reports/         generated results
   issues.md      audit of the original code: 15 issues, quotes, and the fix for each
+  paper_numbers.md  quantities cited in `paper/body.tex`
 ```
 
 ## Dataset variants
@@ -85,7 +88,6 @@ acquisition session, no scans and no dates shared with training.
 | `Activity_Density` | **Ratio + LightGBM** | **0.934** | **0.949** | **0.51** | 6.7 % |
 | `Volume_[ml]_CT` | LightGBM (raw target) — *baseline* | 0.406 | 0.722 | 3.96 | 15.6 % |
 | `Volume_[ml]_CT` | **physics only, `a·V_NM + b`** | **0.701** | **0.748** | **3.78** | 14.5 % |
-| `Volume_[ml]_CT` | Residual + GBM, shrinkage 0.3 | 0.674 | 0.758 | 3.70 | 14.4 % |
 
 Two conclusions worth stating plainly:
 
@@ -94,7 +96,7 @@ Two conclusions worth stating plainly:
   above the training range and a tree cannot predict outside it; the dimensionless ratio
   occupies the same range in every session, and multiplying the anchor back in supplies
   the extrapolation.
-- **Volume**: a two-parameter affine calibration `V_CT ≈ 0.89·V_NM + 6.0` beats every
+- **Volume**: a two-parameter affine calibration `V_CT ≈ 0.893·V_NM + 6.00` beats every
   79-feature model. Radiomics buys about one point of R² and only via a shrunk residual
   correction. This is a real finding, not a modelling failure — under the reduced feature
   set the NM→CT volume relationship is physics-limited, not model-limited.

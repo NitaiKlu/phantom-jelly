@@ -178,94 +178,116 @@ This standardization keeps a constant intensity resolution across activity level
 To prevent overfitting and reduce collinearity, constant features and pairs with absolute Pearson correlation above $0.995$ were excluded.
 Absolute position inside the phantom (centre of mass, bounding-box origin) is also removed, so that a model cannot memorise insert layout.
 
-\paragraph{Physics anchors.}
-Reconstructed NM counts scale linearly with activity concentration, and NM volume is an affine function of CT volume.
-The released pipeline therefore always evaluates two physics baselines before any flexible learner: a one-parameter through-origin calibration $A = k \times \bar{c}$ on mean NM counts for activity density, and a two-parameter fit $V_{\mathrm{CT}} = a\,V_{\mathrm{NM}} + b$ for volume.
-On the reduced training table the latter is $V_{\mathrm{CT}} \approx 0.893\,V_{\mathrm{NM}} + 6.00$.
-
 \paragraph{Predictive modeling strategy.}
-A model zoo of linear estimators, random forests, gradient-boosted trees (LightGBM, HistGBM, XGBoost) and a small MLP is then trained in two regimes.
-\begin{enumerate}
-\item \textbf{Raw-target models.}
-The learner predicts activity density or CT volume directly from the radiomic feature vector.
-Tree ensembles trained this way cannot extrapolate beyond the training range; the held-out session is shifted upward on both targets, so raw-target trees systematically under-predict it.
+The two targets are treated separately.
 
-\item \textbf{Physics-anchored models.}
-The same learners are applied to a dimensionless ratio (activity density / mean counts, or $V_{\mathrm{CT}} / V_{\mathrm{NM}}$) and the anchor is multiplied back in (\texttt{PhysicsRatioRegressor}).
-The ratio occupies a comparable range in every session, and the multiplication by the NM measurement supplies the extrapolation.
-An additive residual variant (\texttt{PhysicsResidualRegressor}) is also evaluated; for volume it is the wrong shape relative to the two-parameter affine baseline and is not the reported model.
-\end{enumerate}
+Activity density is proportional to the mean reconstructed intensity $\bar{c}$ in the NM mask.
+The baseline is therefore the one-parameter calibration
+\begin{equation}
+\label{eq:activity-cal}
+A = k\,\bar{c},
+\end{equation}
+with $k$ fitted through the origin on the training sessions.
+Radiomic features enter only as a correction to this scale.
+A gradient-boosting model (LightGBM) is trained to predict the ratio $A/\bar{c}$ from the NM feature vector; the activity-density estimate is that predicted ratio multiplied by the observed $\bar{c}$.
+A LightGBM model trained to predict $A$ directly, rather than the ratio, is reported as a comparison.
 
-Model selection uses session-grouped cross-validation on the training dates, which is the validation scheme whose ranking agrees with the held-out session.
-A conventional randomized row split is computed only as a diagnostic: because activity density is essentially constant within an acquisition ($51$ of $67$ training scans carry a single value), a random split places ROIs from the same scan on both sides and inflates activity-density $R^2$ from $0.50$ (session-grouped) to $0.999$ (\texttt{reports/audit.md}).
+NM-mask volume $V_{\mathrm{NM}}$ is linearly related to CT volume, but the two are not proportional.
+The volume estimate is the two-parameter fit
+\begin{equation}
+\label{eq:volume-cal}
+V_{\mathrm{CT}} = a\,V_{\mathrm{NM}} + b,
+\end{equation}
+with $a$ and $b$ estimated on the training sessions.
+An elastic-net regressor on the same NM features is included only as a comparison.
 
-The models named in the results are therefore the ones selected by session-grouped CV and confirmed on the held-out file: \textbf{Ratio+LightGBM} for activity density, and the physics affine calibration for volume.
+\paragraph{Validation.}
+Sessions~$1$--$5$ are used for training.
+Cross-validation holds out one acquisition date at a time.
+Reported scores are computed on session~$0$, which is not used for training or selection.
+Activity density is prepared once per acquisition and is constant, or nearly constant, within a scan ($51$ of $67$ training scans have a single value).
+Segments from the same scan are therefore not independent, and a random split of segments is not used to select or compare models.
 
 \section{Results}
 
-Segments that lacked a unique CT--SPECT correspondence (one CT segment matched to more than one NM segment, or vice versa) were filtered out of the released tables.
-Constant features and highly correlated features were then removed, and the model zoo was trained on the remaining NM-40 radiomics.
+All scores below are computed on session~$0$ of the reduced NM-40 table: $315$ segments from $13$ acquisitions that share no scan and no date with training ($1{,}766$ segments, $67$ acquisitions, $79$ features).
+On this session both targets lie above the training mean (activity density $6.76$ versus $4.08\,\mu\mathrm{Ci/ml}$; CT volume $19.2$ versus $15.4\,\mathrm{ml}$).
+\Cref{tab:ml} reports session-grouped cross-validation on the training dates together with the held-out scores.
 
-On the held-out session, predicting activity density from radiomics alone fails to extrapolate: a LightGBM model on the raw target attains only $R^2=0.43$ ($\mathrm{RMSE}=1.72\,\mu\mathrm{Ci/ml}$).
-The one-parameter physics baseline $A = k \times \bar{c}$ already reaches $R^2=0.93$ ($\mathrm{RMSE}=0.61\,\mu\mathrm{Ci/ml}$).
-Training LightGBM on the ratio $A / \bar{c}$ and multiplying the counts back in (Ratio+LightGBM) improves the held-out scores to $R^2=0.95$ and $\mathrm{RMSE}=0.51\,\mu\mathrm{Ci/ml}$ (\Cref{fig:activity}, session-grouped CV $R^2=0.93$).
-A random forest on the raw target, the architecture named in the original analysis, falls to $R^2=0.59$ on the same held-out session.
+\paragraph{Activity density.}
+Mean reconstructed intensity $\bar{c}$ is linearly related to prepared activity density (\Cref{fig:activity}, left).
+The held-out session occupies two disjoint bands ($3.6$--$5.2$ and $7.1$--$10.2\,\mu\mathrm{Ci/ml}$) that fall on the same line as the training sessions.
+The horizontal banding in that panel is the per-acquisition preparation: many scans contribute a single activity value.
+The global line is nevertheless dominated by between-session differences in prepared activity; within a session the correlation of $\bar{c}$ with activity density falls to approximately $0.45$--$0.55$ for half of the training sessions.
 
-For volume, the two-parameter affine calibration $V_{\mathrm{CT}} \approx 0.893\,V_{\mathrm{NM}} + 6.00$ attains $R^2=0.75$ and $\mathrm{RMSE}=3.78\,\mathrm{ml}$ on the held-out session (\Cref{fig:volume}, session-grouped CV $R^2=0.70$).
-Flexible radiomic models do not beat this baseline once sessions are held out.
-Elastic net, which the original analysis preferred for volume, has session-grouped CV $R^2 < 0$ and held-out $R^2=0.67$.
-Random forest is stronger than elastic net on a random row split but drops to held-out $R^2=0.64$, confirming that a tree fit on radiomics does not transfer to a new phantom geometry for volume.
+The through-origin calibration~\eqref{eq:activity-cal} already recovers the held-out densities with $R^2=0.93$, $\mathrm{RMSE}=0.61\,\mu\mathrm{Ci/ml}$ and $\mathrm{MAPE}=7.2\%$ (session-grouped CV $R^2=0.92$).
+The observed ratio $A/\bar{c}$ is stable across sessions, including session~$0$ (approximately $2.8$--$3.4\times 10^{-5}\,\mu\mathrm{Ci\,ml^{-1}}$ per count).
 
-\Cref{tab:ml} summarises the session-grouped CV and held-out scores for the models discussed in the text.
-Full zoo rankings are in \texttt{reports/results.md} and are reproduced by \texttt{python scripts/run\_experiments.py}.
+LightGBM trained on $A/\bar{c}$ improves these scores to $R^2=0.95$, $\mathrm{RMSE}=0.51\,\mu\mathrm{Ci/ml}$, $\mathrm{MAE}=0.41\,\mu\mathrm{Ci/ml}$ and $\mathrm{MAPE}=6.7\%$ (session-grouped CV $R^2=0.93$).
+The identity plot (\Cref{fig:activity}, right) follows the two held-out bands along the line of equality, with a small overestimate in the lower band and larger scatter in the upper band.
+A LightGBM model trained to predict $A$ directly reaches only $R^2=0.43$ ($\mathrm{RMSE}=1.72\,\mu\mathrm{Ci/ml}$, $\mathrm{MAPE}=23.8\%$).
+The radiomic step is therefore a modest correction to a calibration that already transfers to a new preparation.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.98\linewidth]{fig3_activity.png}
+\caption{Activity density on the reduced NM-40 table.
+Left: prepared activity density versus mean NM intensity for the training sessions (blue) and session~$0$ (red).
+The held-out points occupy two activity bands on the same line as training.
+Right: predicted versus true activity density on session~$0$ for LightGBM trained on $A/\bar{c}$.
+The dashed line is identity.}
+\label{fig:activity}
+\end{figure}
+
+\paragraph{Volume.}
+CT volume is an affine function of the $40\%$ NM-mask volume (\Cref{fig:volume}, left).
+The fit on the training sessions is $V_{\mathrm{CT}} \approx 0.893\,V_{\mathrm{NM}} + 6.00$.
+Held-out volumes ($6.8$--$51.4\,\mathrm{ml}$) overlap the main training cloud ($1.9$--$71.8\,\mathrm{ml}$).
+
+On session~$0$ this fit attains $R^2=0.75$, $\mathrm{RMSE}=3.78\,\mathrm{ml}$, $\mathrm{MAE}=2.80\,\mathrm{ml}$ and $\mathrm{MAPE}=14.5\%$ (session-grouped CV $R^2=0.70$).
+The identity plot (\Cref{fig:volume}, right) is tight between about $10$ and $25\,\mathrm{ml}$; the largest inserts are under-predicted.
+An elastic-net regressor on the same $79$ NM features does not improve on the affine fit (held-out $R^2=0.67$, $\mathrm{RMSE}=4.30\,\mathrm{ml}$, $\mathrm{MAPE}=18.5\%$; session-grouped CV $R^2 < 0$).
+Under SPECT-only features, the NM-to-CT volume map is limited by that physical relationship rather than by the choice of regressor.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.98\linewidth]{fig4_volume.png}
+\caption{Volume on the reduced NM-40 table.
+Left: CT volume versus $40\%$ NM-mask volume for the training sessions (blue) and session~$0$ (red).
+Right: predicted versus true CT volume on session~$0$ for the affine calibration~\eqref{eq:volume-cal}.
+The dashed line is identity.}
+\label{fig:volume}
+\end{figure}
 
 \begin{table}[ht]
 \centering
-\caption{Machine-learning results on the reduced NM-40 table.
-Session-CV is grouped by acquisition date; test is the held-out session.
-Activity RMSE is in $\mu$Ci/ml; volume RMSE is in ml.}
+\caption{Held-out performance on session~$0$ of the reduced NM-40 table, with session-grouped cross-validation on the training dates.
+Activity errors are in $\mu$Ci/ml; volume errors are in ml.}
 \label{tab:ml}
 \small
 \begin{tabular}{llcccc}
 \toprule
 Target & Model & Session-CV $R^2$ & Test $R^2$ & Test RMSE & Test MAPE \\
 \midrule
-Activity & LightGBM (raw) & $0.58$ & $0.43$ & $1.72$ & $23.8\%$ \\
-Activity & Physics $k \times$ counts & $0.92$ & $0.93$ & $0.61$ & $7.2\%$ \\
-Activity & Ratio+LightGBM & $0.93$ & $0.95$ & $0.51$ & $6.7\%$ \\
-Volume & Random forest & $0.40$ & $0.64$ & $4.51$ & $16.7\%$ \\
+Activity & LightGBM on $A$ & $0.58$ & $0.43$ & $1.72$ & $23.8\%$ \\
+Activity & $A = k\,\bar{c}$ & $0.92$ & $0.93$ & $0.61$ & $7.2\%$ \\
+Activity & LightGBM on $A/\bar{c}$ & $0.93$ & $0.95$ & $0.51$ & $6.7\%$ \\
 Volume & Elastic net & ${<}\,0$ & $0.67$ & $4.30$ & $18.5\%$ \\
-Volume & Physics $a V_{\mathrm{NM}}+b$ & $0.70$ & $0.75$ & $3.78$ & $14.5\%$ \\
+Volume & $V_{\mathrm{CT}} = a V_{\mathrm{NM}}+b$ & $0.70$ & $0.75$ & $3.78$ & $14.5\%$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.98\linewidth]{fig3_activity.png}
-\caption{Activity-density mapping on the reduced table.
-Left: activity density versus mean NM intensity counts for the training sessions (blue) and the held-out session (red).
-Right: Ratio+LightGBM prediction versus true activity density on the held-out session.}
-\label{fig:activity}
-\end{figure}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=0.98\linewidth]{fig4_volume.png}
-\caption{Volume mapping on the reduced table.
-Left: CT volume versus NM$_{40}$ volume for the training sessions (blue) and the held-out session (red).
-Right: physics affine prediction versus true CT volume on the held-out session.}
-\label{fig:volume}
-\end{figure}
+\FloatBarrier
 
 \section{Summary}
 
-This paper presented a method for estimating the activity density and the volume of a lesion using machine-learning algorithms on radiomic properties of $2{,}302$ lesions which, unlike previous methods, include irregular shapes rather than spheres.
-The experimental library is a two-compartment gelatin phantom imaged with SPECT/CT, producing $75$ scans of $21$ containers over six sessions, with session~$0$ held out as a new-preparation test.
-For activity-density estimation, the best results were obtained by a physics-anchored LightGBM model trained on the ratio of activity density to mean NM counts, with $R^2=0.95$ on the held-out session.
-For volume estimation, $R^2=0.75$ was obtained with a two-parameter affine calibration of the NM volume; radiomic models did not improve on that physics baseline under session-held-out validation.
+This paper presented a method for estimating the activity density and the volume of irregular gelatin inserts from SPECT radiomics and the corresponding NM measurements.
+The experimental library is a two-compartment gelatin phantom imaged with SPECT/CT, producing $75$ scans of $21$ containers over six sessions and $2{,}302$ validated one-to-one pairs, with session~$0$ held out as a new-preparation test.
+For activity density, the count calibration~\eqref{eq:activity-cal} already reaches $R^2=0.93$ on the held-out session; LightGBM trained on the ratio $A/\bar{c}$ improves this to $R^2=0.95$.
+For volume, the affine calibration~\eqref{eq:volume-cal} reaches $R^2=0.75$; radiomic regression does not improve on that fit.
 
-The accompanying code (\texttt{src/phantom\_jelly/} and \texttt{scripts/}) regenerates the session inventory, the model zoo, and \Cref{fig:activity,fig:volume} from the released CSVs.
+The accompanying code (\texttt{src/phantom\_jelly/} and \texttt{scripts/}) regenerates the session inventory and \Cref{fig:activity,fig:volume} from the released CSVs.
 
 \bibliographystyle{plainnat}
 \bibliography{references}
